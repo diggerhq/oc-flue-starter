@@ -39,9 +39,9 @@ oc session logs <session-id>
 
 Reply to anything the agent asks with
 `oc session steer <session-id> "your answer"`, or open the session in the
-[dashboard](https://app.opencomputer.dev) and chat there. The triage **skill**
-ships with the deploy (it lives in `src/skills/` and rides the artifact) — try
-it: `oc session create --input "Order 2203 arrived with a bent tent pole."`
+[dashboard](https://app.opencomputer.dev) and chat there. The triage **skill** is
+packaged into the artifact from `src/skills/` on every deploy — try it:
+`oc session create --input "Order 2203 arrived with a bent tent pole."`
 
 To give the agent a **codebase to work on**, attach a repo as a session
 source — it lands in the agent's workspace (and any `.agents/skills/` that
@@ -64,34 +64,35 @@ src/
   skills/triage/SKILL.md         # the agent's skill — ships with the deploy
 ```
 
-Skills in `src/skills/` belong to **this agent** and travel with every deploy:
-the artifact carries them, and OpenComputer places them into the agent's
-workspace where Flue discovers them at runtime. This is separate from
+Skills in `src/skills/` belong to **this agent**: the build packages them
+into the artifact, and at run time they are written into the agent's
+workspace, where Flue's normal discovery finds them. This is separate from
 `.agents/skills/` in repos you attach as sources — that convention means
 "skills for agents working on *that* repo," and those are picked up from the
 workspace too. (Flue's packaged skill imports — `with { type: 'skill' }` —
 aren't supported on OC yet.)
 
-## What `serveOC` does (so your app doesn't have to)
+## What `serveOC` does
 
-`src/oc.ts` hands your agent to `@opencomputer/flue`, which wires the
-platform in at run time:
+`src/oc.ts` hands your agent to `@opencomputer/flue`, which connects it to
+the platform at run time:
 
-- **Durable conversation, zero config** — it opens Flue's conversation store
-  on the session's persistent state volume; the agent resumes with full
-  context after restarts and hibernation. (That's why adding a `db.ts` is a
-  deploy error — a second store would fork the truth.)
-- **Sandbox wiring** — Flue's built-in `read`/`write`/`edit`/`bash` execute
-  on the session's **workspace sandbox** (a separate machine, where `--source`
-  repos are checked out). Your **custom tools run in-process** with your app.
-- **`say` and `ask` tools, injected** — `ask` makes the session yield
-  `needs_input`, wait at zero compute, and resume with the user's answer.
-  (Stock Flue has no human-in-the-loop primitive.)
-- **Model routing** — the Anthropic provider is registered against your OC
-  credential (or managed billing) at run time; the model string in your code
-  just works, and no key ever exists in this repo or the bundle.
-- **Turn plumbing** — session turns are admitted into Flue's engine
-  idempotently; every step and tool call lands in the session's event log.
+- **Conversation persistence** — opens Flue's conversation store on the
+  session's state volume; history survives restarts and hibernation. Adding
+  a `db.ts` is a deploy error because a second store would fork the
+  conversation history.
+- **Sandbox** — Flue's built-in `read`/`write`/`edit`/`bash` execute on the
+  session's workspace sandbox (a separate machine, where `--source` repos
+  are checked out). Custom tools run in-process with your app.
+- **`say` and `ask` tools** — `ask` yields the session as `needs_input` and
+  hibernates it until the user replies, then the run continues with the
+  answer. Stock Flue has no equivalent.
+- **Model credentials** — the Anthropic provider is registered with
+  credentials resolved from your OC account (managed billing or a stored
+  key). This repo and the bundle contain no credentials.
+- **Turn handling** — session turns are admitted into Flue's engine with
+  idempotent ids (platform retries can't double-run one); every step and
+  tool call is written to the session's event log.
 
 ## What's different from a stock Flue app
 
@@ -115,8 +116,8 @@ session exists):
 **Custom tools run inside the deployed artifact**, which implies two rules:
 anything they need at run time must be **bundled** (this starter `import`s
 its fixture JSON — the repo checkout is not on the app's filesystem), and
-outbound network from tools is currently unrestricted but will move behind an
-egress policy — keep tools self-contained where you can.
+outbound network from tools is currently unrestricted; an egress policy is
+planned, so don't embed secrets in the bundle to call your own APIs.
 
 ## Local development
 
