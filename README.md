@@ -7,7 +7,7 @@ runs shell/file tools in an isolated sandbox, and wakes up when you message it.
 
 The agent itself is plain Flue — a support-triage bot with one typed tool and
 one skill, laid out the standard Flue way (`src/agents/`, discovered by
-filename). The entire OpenComputer integration is [`src/oc.ts`](./src/oc.ts),
+filename). The entire OpenComputer integration is [`src/opencomputer.ts`](./src/opencomputer.ts),
 three lines.
 
 **Docs:** [Run Flue agents on OpenComputer](https://docs.opencomputer.dev/agent-sessions/flue)
@@ -57,7 +57,7 @@ oc session create --input "Fix the failing test." --source your-org/your-repo
 agent.toml                       # OC deploy manifest: name, model, runtime = flue
 flue.config.ts                   # Flue's own build config (used by `npm run dev`)
 src/
-  oc.ts                          # the OpenComputer entry — the whole integration
+  opencomputer.ts                # the OpenComputer entry — the whole integration
   agents/support-triage.ts       # the agent (plain Flue; the filename is the agent's name)
   tools/lookup-order.ts          # a typed custom tool (valibot schema, bundled fixture data)
   data/orders.json               # fixture the tool reads — bundled into the artifact
@@ -74,7 +74,7 @@ aren't supported on OC yet.)
 
 ## What `serveOC` does
 
-`src/oc.ts` hands your agent to `@opencomputer/flue`, which connects it to
+`src/opencomputer.ts` hands your agent to `@opencomputer/flue`, which connects it to
 the platform at run time:
 
 - **Conversation persistence** — opens Flue's conversation store on the
@@ -99,7 +99,7 @@ the platform at run time:
 Six things, all enforced at build/deploy time (violations fail before a
 session exists):
 
-1. The `src/oc.ts` entry exists (everything else is plain Flue — `flue dev`
+1. The `src/opencomputer.ts` entry exists (everything else is plain Flue — `flue dev`
    still works).
 2. `sandbox:` stays **unset** and there is **no `db.ts`** — both are supplied.
 3. The model is declared in three places (`defineAgent`, `agent.toml`, the OC
@@ -128,7 +128,7 @@ The agent definition is plain Flue, so the standard Flue dev loop works:
 npm run dev   # flue dev — Flue's own local runtime and sandbox
 ```
 
-`src/oc.ts` is additive: local dev doesn't use it, and deploying doesn't
+`src/opencomputer.ts` is additive: local dev doesn't use it, and deploying doesn't
 change your agent code.
 
 ## Troubleshooting

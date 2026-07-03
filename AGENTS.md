@@ -20,7 +20,7 @@ deploy validates a strict profile — keep these invariants or the deploy fails:
   path is reserved for its conventional meaning (skills for agents working
   on a repo attached as a session source).
 - **Layout is Flue-canonical**: source under `src/`; the agent's filename is
-  its Flue name (`support-triage.ts`); `src/oc.ts` is the only
+  its Flue name (`support-triage.ts`); `src/opencomputer.ts` is the only
   OpenComputer-specific file. Don't import packaged skills
   (`with { type: 'skill' }`) — unsupported and a build error.
 - `dist-oc/` is build output — gitignored, never commit it.
