@@ -134,8 +134,11 @@ The agent definition is plain Flue, so the standard Flue dev loop works:
 npm run dev   # flue dev — Flue's own local runtime and sandbox
 ```
 
-`src/opencomputer.ts` is additive: local dev doesn't use it, and deploying doesn't
-change your agent code.
+`flue dev` exercises the loop and your custom tools — not skills: its default
+local environment is an empty in-memory filesystem, so `src/skills/**` only
+take effect on OpenComputer (they're placed into the agent's workspace at
+deploy). `src/opencomputer.ts` is additive: local dev doesn't use it, and
+deploying doesn't change your agent code.
 
 ## Troubleshooting
 
