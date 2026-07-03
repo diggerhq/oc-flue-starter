@@ -9,8 +9,8 @@ deploy validates a strict profile — keep these invariants or the deploy fails:
 - **Never add** `sandbox:` to the agent definition, a `db.ts`, or any API
   key/secret — the platform supplies sandbox, persistence, and model
   credentials. CI greps for key-shaped strings.
-- **Custom tool names**: `bash`, `read`, `write`, `edit`, `ls`, `say`, `ask`
-  are reserved — pick anything else.
+- **Custom tool names**: `bash`, `read`, `write`, `edit`, `ls`, `grep`,
+  `glob`, `say`, `ask` are reserved — pick anything else.
 - **Tools run from the deployed bundle, not the repo checkout**: anything a
   tool needs at run time must be `import`ed (see
   `src/tools/lookup-order.ts` importing `../data/orders.json`), never read

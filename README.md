@@ -115,7 +115,7 @@ session exists):
    yet — the [docs](https://docs.opencomputer.dev/agent-sessions/flue) track
    the full profile.
 5. Custom tools can't use the reserved names `bash`, `read`, `write`, `edit`,
-   `ls`, `say`, `ask`.
+   `ls`, `grep`, `glob`, `say`, `ask`.
 6. No API keys anywhere in the repo or bundle — model credentials come from
    your OpenComputer account. This repo's CI greps for key-shaped strings,
    and the deploy scans the built artifact and fails on a hit.
