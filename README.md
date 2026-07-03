@@ -74,8 +74,14 @@ aren't supported on OC yet.)
 
 ## What `serveOC` does
 
-`src/opencomputer.ts` hands your agent to `@opencomputer/flue`, which connects it to
-the platform at run time:
+`src/opencomputer.ts` is an ordinary module you own — nothing generates or
+injects it; it plays the same role as `cloudflare.ts` in a Cloudflare-deployed
+Flue app (an optional platform-specific entry). A full Flue app with `app.ts`,
+channels, or workflows can add this file unchanged and keep self-hosting:
+code not imported by it isn't in the OpenComputer artifact.
+
+It hands your agent to `@opencomputer/flue`, which connects it to the
+platform at run time:
 
 - **Conversation persistence** — opens Flue's conversation store on the
   session's state volume; history survives restarts and hibernation. Adding
