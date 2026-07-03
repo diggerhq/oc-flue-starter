@@ -11,11 +11,17 @@ jobs:
       - uses: actions/checkout@v4
 
       # The flagship rule: no credentials in the starter, ever.
+      # Match full credential SHAPES (same as the CLI/server scanners), not
+      # bare prefixes: a bare `sk-ant-` grep both false-positives on the literal
+      # and matches this workflow's own pattern string (which turned the check
+      # permanently red). Exclude .github so the scan never reads its patterns.
       - name: No leaked keys
         run: |
-          ! grep -rInE 'sk-ant-|sk-proj-|ANTHROPIC_API_KEY=|OPENAI_API_KEY=' \
-            --exclude-dir=.git --exclude-dir=node_modules . \
-            || { echo "credential-looking string found"; exit 1; }
+          if grep -rInE \
+            'sk-ant-(api|oat)[0-9]{2}-[A-Za-z0-9_-]{24,}|sk-proj-[A-Za-z0-9_-]{24,}|sk-or-v1-[A-Za-z0-9]{32,}|sk-[A-Za-z0-9]{32,}|AIza[A-Za-z0-9_-]{35}' \
+            --exclude-dir=.git --exclude-dir=node_modules --exclude-dir=.github .; then
+            echo "credential-looking string found"; exit 1
+          fi
 
       - name: Build output is gitignored
         run: |
