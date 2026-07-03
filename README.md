@@ -50,8 +50,8 @@ Every deploy is an immutable
 is repointing. Sessions keep the revision they started on.
 
 To give the agent a **codebase to work on**, attach a repo as a session
-source — it lands in the agent's workspace, along with any `.agents/skills/`
-the repo carries (skills for working on that repo):
+source — it's checked out into the agent's workspace, along with any
+`.agents/skills/` the repo carries (skills for working on that repo):
 
 ```sh
 oc session create --input "Fix the failing test." --source your-org/your-repo
@@ -139,9 +139,8 @@ planned, so don't embed secrets in the bundle to call your own APIs.
 
 ## Not supported (yet)
 
-Compared to full Flue — the
-[docs](https://docs.opencomputer.dev/agent-sessions/flue#limitations-vs-full-flue)
-carry the full statement:
+Compared to full Flue — full list in the
+[docs](https://docs.opencomputer.dev/agent-sessions/flue#limitations-vs-full-flue):
 
 - **Channels and workflows** — inbound is session messages + GitHub watches;
   `defineWorkflow` doesn't run here. (Code the entry doesn't import stays
@@ -151,8 +150,10 @@ carry the full statement:
   outside the tested profile.
 - **Anthropic models only**; `durability:` settings are ignored (one attempt
   per turn under the platform's deadline).
-- **Text in, text out** — attachments/images aren't wired.
-- **No HTTP surface** — the sessions API is how the world reaches the agent.
+- **Text in, text out** — there is no way to send the agent an image or a
+  file attachment.
+- **No HTTP endpoints** — a Flue app's own server doesn't run; requests
+  reach the agent only through the sessions API.
 
 ## Local development
 
