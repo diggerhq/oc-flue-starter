@@ -1,9 +1,9 @@
 # oc-flue-starter
 
 A [Flue](https://flueframework.com) agent that deploys to
-[OpenComputer](https://docs.opencomputer.dev/agent-sessions/overview) as a **durable session**: it keeps its
-conversation across restarts, hibernates between turns (you don't pay for idle),
-runs shell/file tools in an isolated sandbox, and wakes up when you message it.
+OpenComputer as a [**durable session**](https://docs.opencomputer.dev/agent-sessions/overview): it keeps its
+conversation across restarts, hibernates between turns, runs shell/file
+tools in an isolated sandbox, and wakes up when you message it.
 
 The agent itself is plain Flue — a support-triage bot with one typed tool and
 one skill, laid out the standard Flue way (`src/agents/`, discovered by
@@ -136,6 +136,23 @@ anything they need at run time must be **bundled** (this starter `import`s
 its fixture JSON — the repo checkout is not on the app's filesystem), and
 outbound network from tools is currently unrestricted; an egress policy is
 planned, so don't embed secrets in the bundle to call your own APIs.
+
+## Not supported (yet)
+
+Compared to full Flue — the
+[docs](https://docs.opencomputer.dev/agent-sessions/flue#limitations-vs-full-flue)
+carry the full statement:
+
+- **Channels and workflows** — inbound is session messages + GitHub watches;
+  `defineWorkflow` doesn't run here. (Code the entry doesn't import stays
+  out of the artifact, so a full app keeps both when self-hosting.)
+- **One agent, one conversation per session** — no per-instance routing;
+  fan out by creating sessions. Subagents (`session.task()`) execute but are
+  outside the tested profile.
+- **Anthropic models only**; `durability:` settings are ignored (one attempt
+  per turn under the platform's deadline).
+- **Text in, text out** — attachments/images aren't wired.
+- **No HTTP surface** — the sessions API is how the world reaches the agent.
 
 ## Local development
 
