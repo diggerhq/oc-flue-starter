@@ -10,7 +10,9 @@ one skill, laid out the standard Flue way (`src/agents/`, discovered by
 filename). The entire OpenComputer integration is [`src/opencomputer.ts`](./src/opencomputer.ts),
 three lines.
 
-**Docs:** [Run Flue agents on OpenComputer](https://docs.opencomputer.dev/agent-sessions/flue)
+**Docs:** [Flue on OpenComputer](https://docs.opencomputer.dev/agent-sessions/flue)
+(includes adapting an existing Flue app — it's this repo minus the example
+agent: the entry file, `agent.toml`, deploy)
 
 ## Prerequisites
 
@@ -43,9 +45,13 @@ Reply to anything the agent asks with
 packaged into the artifact from `src/skills/` on every deploy — try it:
 `oc session create --input "Order 2203 arrived with a bent tent pole."`
 
+Every deploy is an immutable
+[revision](https://docs.opencomputer.dev/agent-sessions/revisions); rollback
+is repointing. Sessions keep the revision they started on.
+
 To give the agent a **codebase to work on**, attach a repo as a session
-source — it lands in the agent's workspace (and any `.agents/skills/` that
-repo carries for its own development become available too):
+source — it lands in the agent's workspace, along with any `.agents/skills/`
+the repo carries (skills for working on that repo):
 
 ```sh
 oc session create --input "Fix the failing test." --source your-org/your-repo
@@ -85,43 +91,47 @@ platform at run time:
 
 - **Conversation persistence** — opens Flue's conversation store on the
   session's state volume; history survives restarts and hibernation. Adding
-  a `db.ts` is a deploy error because a second store would fork the
+  a `db.ts` is a build error because a second store would fork the
   conversation history.
 - **Sandbox** — Flue's built-in `read`/`write`/`edit`/`bash`/`grep`/`glob`
   execute on the session's workspace sandbox (a separate machine, where
   `--source` repos are checked out). Custom tools run in-process with your
   app.
-- **`say` and `ask` tools** — `ask` yields the session as `needs_input` and
-  hibernates it until the user replies, then the run continues with the
-  answer. Stock Flue has no equivalent.
+- **`say` and `ask` tools** — `say` posts a user-visible message mid-run;
+  `ask` yields the session as `needs_input` and hibernates it until the user
+  replies, then the run continues with the answer. Stock Flue has no
+  equivalent.
 - **Model credentials** — the Anthropic provider is registered with
   credentials resolved from your OC account (managed billing or a stored
   key). This repo and the bundle contain no credentials.
 - **Turn handling** — session turns are admitted into Flue's engine with
-  idempotent ids (platform retries can't double-run one); every step and
-  tool call is written to the session's event log.
+  idempotent ids; if the platform side of a turn dies mid-run, the retry
+  re-attaches to the still-running engine instead of re-running it (the
+  model call is not repeated). Every step and tool call is written to the
+  session's event log.
 
 ## What's different from a stock Flue app
 
-Six things, all enforced at build/deploy time (violations fail before a
-session exists):
+Six rules, each enforced before a session can exist:
 
-1. The `src/opencomputer.ts` entry exists (everything else is plain Flue — `flue dev`
-   still works).
-2. `sandbox:` stays **unset** and there is **no `db.ts`** — both are supplied.
+1. The `src/opencomputer.ts` entry exists (build). Everything else is plain
+   Flue — `flue dev` still works.
+2. `sandbox:` stays **unset** and there is **no `db.ts`** (build) — both are
+   supplied by the platform.
 3. The model is declared in three places (`defineAgent`, `agent.toml`, the OC
-   agent) and must be **identical**.
+   agent) and must be **identical** (deploy).
 4. Skills live in `src/skills/**` (shipped with each deploy); packaged
-   `with {type:'skill'}` imports and Flue channels/workflows aren't supported
-   yet — the [docs](https://docs.opencomputer.dev/agent-sessions/flue) track
-   the full profile.
+   `with {type:'skill'}` imports are rejected (build). Channels/workflows
+   aren't supported — the
+   [docs](https://docs.opencomputer.dev/agent-sessions/flue) track the full
+   profile.
 5. Custom tools can't use the reserved names `bash`, `read`, `write`, `edit`,
-   `ls`, `grep`, `glob`, `say`, `ask`.
+   `ls`, `grep`, `glob`, `say`, `ask` (build).
 6. No API keys anywhere in the repo or bundle — model credentials come from
-   your OpenComputer account. This repo's CI greps for key-shaped strings,
-   and the deploy scans the built artifact and fails on a hit.
+   your OpenComputer account. This repo's CI greps for key-shaped strings;
+   the deploy scans the built artifact and fails on a hit (deploy).
 
-**Custom tools run inside the deployed artifact**, which implies two rules:
+**Custom tools run inside the deployed artifact**, with two consequences:
 anything they need at run time must be **bundled** (this starter `import`s
 its fixture JSON — the repo checkout is not on the app's filesystem), and
 outbound network from tools is currently unrestricted; an egress policy is
@@ -137,18 +147,21 @@ npm run dev   # flue dev — Flue's own local runtime and sandbox
 
 `flue dev` exercises the loop and your custom tools — not skills: its default
 local environment is an empty in-memory filesystem, so `src/skills/**` only
-take effect on OpenComputer (they're placed into the agent's workspace at
-deploy). `src/opencomputer.ts` is additive: local dev doesn't use it, and
-deploying doesn't change your agent code.
+take effect on OpenComputer (shipped with the artifact, placed into the
+agent's workspace at run time). `src/opencomputer.ts` is additive: local dev
+doesn't use it, and deploying doesn't change your agent code.
 
 ## Troubleshooting
 
+- **Build fails (`oc-flue-build`)** — a profile violation, named in the
+  error: `sandbox:` set, a `db.ts`, a packaged-skill import, a reserved tool
+  name, or a model that isn't `anthropic/…`. Nothing is uploaded.
+- **Deploy fails at verification** — the bundle built but didn't boot in the
+  scratch sandbox; the deploy output includes the probe's error. Usual
+  cause: a top-level crash in your code (something that only happens at
+  import time).
+- **Model rejected at deploy** — the three declarations diverge (agent,
+  `agent.toml`, code); see
+  [models](https://docs.opencomputer.dev/agent-sessions/flue#models).
 - **`provider 401` on the first turn** — the agent has no usable model
-  credential: attach an Anthropic credential to the agent, or enable managed
-  billing.
-- **`oc agent deploy` fails at verification** — your bundle didn't boot; the
-  deploy output includes the probe's error (typically a profile violation:
-  `sandbox` set, a packaged-skill import, or a reserved tool name).
-- **Model rejected at deploy** — the three model declarations diverge (agent,
-  `agent.toml`, code), or the model isn't on the
-  [supported list](https://docs.opencomputer.dev/agent-sessions/flue#models).
+  credential: attach an Anthropic credential, or enable managed billing.
