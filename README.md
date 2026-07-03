@@ -72,36 +72,51 @@ workspace where Flue discovers them at runtime. This is separate from
 workspace too. (Flue's packaged skill imports — `with { type: 'skill' }` —
 aren't supported on OC yet.)
 
-## How it works
+## What `serveOC` does (so your app doesn't have to)
 
-Your app runs as the session's **resident brain**: `oc agent deploy` bundles it
-(with your exact Flue version) into an artifact, and OpenComputer boots that
-artifact inside the session's sandbox. File and shell tools execute on a
-separate **workspace sandbox** — the agent edits files and runs commands there,
-never on the box holding credentials. Every step lands in the session's
-**durable event log**: the conversation survives crashes and hibernation, and
-each deploy creates an immutable revision (roll back by repointing).
+`src/oc.ts` hands your agent to `@opencomputer/flue`, which wires the
+platform in at run time:
 
-## What's supported today
+- **Durable conversation, zero config** — it opens Flue's conversation store
+  on the session's persistent state volume; the agent resumes with full
+  context after restarts and hibernation. (That's why adding a `db.ts` is a
+  deploy error — a second store would fork the truth.)
+- **Sandbox wiring** — Flue's built-in `read`/`write`/`edit`/`bash` execute
+  on the session's **workspace sandbox** (a separate machine, where `--source`
+  repos are checked out). Your **custom tools run in-process** with your app.
+- **`say` and `ask` tools, injected** — `ask` makes the session yield
+  `needs_input`, wait at zero compute, and resume with the user's answer.
+  (Stock Flue has no human-in-the-loop primitive.)
+- **Model routing** — the Anthropic provider is registered against your OC
+  credential (or managed billing) at run time; the model string in your code
+  just works, and no key ever exists in this repo or the bundle.
+- **Turn plumbing** — session turns are admitted into Flue's engine
+  idempotently; every step and tool call lands in the session's event log.
 
-This integration is **experimental** and intentionally constrained. Supported:
+## What's different from a stock Flue app
 
-- One agent per app, exported through `serveOC` (see `src/oc.ts`)
-- `anthropic/*` models (managed billing or your Anthropic key)
-- Custom `defineTool` tools and subagents — they run in-process with your app
-- Skills shipped with your app (`src/skills/**` rides each deploy), plus
-  workspace skills from repos attached as sources
-- GitHub watches as input events
+Six things, all enforced at build/deploy time (violations fail before a
+session exists):
 
-Not yet: packaged skill imports (`with { type: 'skill' }`), Flue channels and
-workflows, non-Anthropic models, multiple agents per app. The
-[docs page](https://docs.opencomputer.dev/agent-sessions/flue) tracks the
-full list.
+1. The `src/oc.ts` entry exists (everything else is plain Flue — `flue dev`
+   still works).
+2. `sandbox:` stays **unset** and there is **no `db.ts`** — both are supplied.
+3. The model is declared in three places (`defineAgent`, `agent.toml`, the OC
+   agent) and must be **identical**.
+4. Skills live in `src/skills/**` (shipped with each deploy); packaged
+   `with {type:'skill'}` imports and Flue channels/workflows aren't supported
+   yet — the [docs](https://docs.opencomputer.dev/agent-sessions/flue) track
+   the full profile.
+5. Custom tools can't use the reserved names `bash`, `read`, `write`, `edit`,
+   `ls`, `say`, `ask`.
+6. No API keys anywhere in the repo or bundle — model credentials come from
+   your OpenComputer account (CI greps for leaks).
 
-**Note on outbound network:** custom tools run inside your agent's sandbox
-with unrestricted outbound network access *in this release*; this will move
-behind an egress policy. (This starter's tool is deliberately network-free —
-it reads bundled fixture data.)
+**Custom tools run inside the deployed artifact**, which implies two rules:
+anything they need at run time must be **bundled** (this starter `import`s
+its fixture JSON — the repo checkout is not on the app's filesystem), and
+outbound network from tools is currently unrestricted but will move behind an
+egress policy — keep tools self-contained where you can.
 
 ## Local development
 
@@ -113,18 +128,6 @@ npm run dev   # flue dev — Flue's own local runtime and sandbox
 
 `src/oc.ts` is additive: local dev doesn't use it, and deploying doesn't
 change your agent code.
-
-## Rules this template follows
-
-Deploys are validated, so these are checked, not just conventions:
-
-- `model` in `src/agents/support-triage.ts` **must equal** `model` in `agent.toml`
-- don't set `sandbox:` in the agent (OC supplies it) and don't add a `db.ts`
-  (conversation durability is provided by the platform)
-- don't name a custom tool `bash`, `read`, `write`, `edit`, `ls`, `say`, or
-  `ask` — those are reserved
-- no API keys anywhere in the repo — model credentials come from your OC
-  account
 
 ## Troubleshooting
 
