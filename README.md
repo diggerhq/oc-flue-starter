@@ -26,7 +26,7 @@ three lines.
 git clone https://github.com/diggerhq/oc-flue-starter && cd oc-flue-starter
 npm install
 
-# 1. Create the agent (name must match agent.toml)
+# 1. Create the agent (optional — deploy creates it from agent.toml if missing)
 oc agent create support-triage --runtime flue --model anthropic/claude-sonnet-5
 
 # 2. Build + deploy (runs `oc-flue-build`, uploads the artifact, verifies it boots)
@@ -87,9 +87,10 @@ platform at run time:
   session's state volume; history survives restarts and hibernation. Adding
   a `db.ts` is a deploy error because a second store would fork the
   conversation history.
-- **Sandbox** — Flue's built-in `read`/`write`/`edit`/`bash` execute on the
-  session's workspace sandbox (a separate machine, where `--source` repos
-  are checked out). Custom tools run in-process with your app.
+- **Sandbox** — Flue's built-in `read`/`write`/`edit`/`bash`/`grep`/`glob`
+  execute on the session's workspace sandbox (a separate machine, where
+  `--source` repos are checked out). Custom tools run in-process with your
+  app.
 - **`say` and `ask` tools** — `ask` yields the session as `needs_input` and
   hibernates it until the user replies, then the run continues with the
   answer. Stock Flue has no equivalent.
