@@ -6,8 +6,9 @@ conversation across restarts, hibernates between turns (you don't pay for idle),
 runs shell/file tools in an isolated sandbox, and wakes up when you message it.
 
 The agent itself is plain Flue — a support-triage bot with one typed tool and
-one skill. The entire OpenComputer integration is [`oc.ts`](./oc.ts), three
-lines.
+one skill, laid out the standard Flue way (`src/agents/`, discovered by
+filename). The entire OpenComputer integration is [`src/oc.ts`](./src/oc.ts),
+three lines.
 
 **Docs:** [Run Flue agents on OpenComputer](https://docs.opencomputer.dev/agent-sessions/flue)
 
@@ -51,13 +52,21 @@ oc session create --input "Order 2203 arrived with a bent tent pole." \
 ## Project structure
 
 ```
-agent.toml                    # OC deploy manifest: name, model, runtime = flue
-oc.ts                         # the OpenComputer entry — the whole integration
-agents/support.ts             # the agent: instructions, model, tools (plain Flue)
-tools/lookup-order.ts         # a typed custom tool (valibot schema, bundled fixture data)
-data/orders.json              # fixture the tool reads — bundled into the artifact
-.agents/skills/triage/        # a SKILL.md the agent loads when triaging refunds/damage
+agent.toml                       # OC deploy manifest: name, model, runtime = flue
+flue.config.ts                   # Flue's own build config (used by `npm run dev`)
+src/
+  oc.ts                          # the OpenComputer entry — the whole integration
+  agents/support-triage.ts       # the agent (plain Flue; the filename is the agent's name)
+  tools/lookup-order.ts          # a typed custom tool (valibot schema, bundled fixture data)
+  data/orders.json               # fixture the tool reads — bundled into the artifact
+.agents/skills/triage/           # a workspace skill the agent loads when triaging
 ```
+
+Why `.agents/skills/` sits at the repo root: these are Flue **workspace
+skills** — the agent discovers them at runtime from `.agents/skills/**` of its
+working directory, and when you attach this repo as a session source, the repo
+*is* that working directory. (Flue's other skill kind — packaged imports via
+`with { type: 'skill' }` — isn't supported on OC yet.)
 
 ## How it works
 
@@ -73,7 +82,7 @@ each deploy creates an immutable revision (roll back by repointing).
 
 This integration is **experimental** and intentionally constrained. Supported:
 
-- One agent per app, exported through `serveOC` (see `oc.ts`)
+- One agent per app, exported through `serveOC` (see `src/oc.ts`)
 - `anthropic/*` models (managed billing or your Anthropic key)
 - Custom `defineTool` tools and subagents — they run in-process with your app
 - Workspace skills (`.agents/skills/**` in a repo attached as a session source)
@@ -97,14 +106,14 @@ The agent definition is plain Flue, so the standard Flue dev loop works:
 npm run dev   # flue dev — Flue's own local runtime and sandbox
 ```
 
-`oc.ts` is additive: local dev doesn't use it, and deploying doesn't change
-your agent code.
+`src/oc.ts` is additive: local dev doesn't use it, and deploying doesn't
+change your agent code.
 
 ## Rules this template follows
 
 Deploys are validated, so these are checked, not just conventions:
 
-- `model` in `agents/support.ts` **must equal** `model` in `agent.toml`
+- `model` in `src/agents/support-triage.ts` **must equal** `model` in `agent.toml`
 - don't set `sandbox:` in the agent (OC supplies it) and don't add a `db.ts`
   (conversation durability is provided by the platform)
 - don't name a custom tool `bash`, `read`, `write`, `edit`, `ls`, `say`, or

@@ -22,8 +22,8 @@ jobs:
           grep -q '^dist-oc/' .gitignore
           test ! -e dist-oc || { echo "dist-oc/ must not be committed"; exit 1; }
 
-      - name: Model strings agree (agent.toml vs agents/support.ts)
+      - name: Model strings agree (agent.toml vs src/agents/support-triage.ts)
         run: |
           m_toml=$(grep -E '^model' agent.toml | sed 's/.*= *"\(.*\)"/\1/')
-          grep -q "model: '$m_toml'" agents/support.ts \
-            || { echo "model in agents/support.ts != agent.toml ($m_toml)"; exit 1; }
+          grep -q "model: '$m_toml'" src/agents/support-triage.ts \
+            || { echo "model in src/agents/support-triage.ts != agent.toml ($m_toml)"; exit 1; }

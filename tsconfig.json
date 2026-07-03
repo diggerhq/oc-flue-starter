@@ -11,5 +11,5 @@
     "resolveJsonModule": true,
     "skipLibCheck": true
   },
-  "include": ["oc.ts", "agents/**/*.ts", "tools/**/*.ts"]
+  "include": ["src/**/*.ts", "flue.config.ts"]
 }
