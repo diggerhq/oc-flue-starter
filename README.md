@@ -33,7 +33,7 @@ oc agent create support-triage --runtime flue --model anthropic/claude-sonnet-5
 oc agent deploy
 
 # 3. Talk to it
-oc session create --input "Customer says order 1042 hasn't arrived. What do I tell them?"
+oc session create --input "Customer says order 1042 hasn't arrived — what do I tell them?"
 oc session logs <session-id>
 ```
 
@@ -111,7 +111,8 @@ session exists):
 5. Custom tools can't use the reserved names `bash`, `read`, `write`, `edit`,
    `ls`, `say`, `ask`.
 6. No API keys anywhere in the repo or bundle — model credentials come from
-   your OpenComputer account (CI greps for leaks).
+   your OpenComputer account. This repo's CI greps for key-shaped strings,
+   and the deploy scans the built artifact and fails on a hit.
 
 **Custom tools run inside the deployed artifact**, which implies two rules:
 anything they need at run time must be **bundled** (this starter `import`s
