@@ -1,7 +1,7 @@
 # oc-flue-starter
 
 A [Flue](https://flueframework.com) agent that deploys to
-[OpenComputer](https://opencomputer.dev) as a **durable session**: it keeps its
+[OpenComputer](https://docs.opencomputer.dev/agent-sessions/overview) as a **durable session**: it keeps its
 conversation across restarts, hibernates between turns (you don't pay for idle),
 runs shell/file tools in an isolated sandbox, and wakes up when you message it.
 
