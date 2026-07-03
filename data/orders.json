@@ -1,0 +1,22 @@
+{
+  "1042": {
+    "status": "shipped",
+    "carrier": "UPS",
+    "tracking": "1Z999AA10123456784",
+    "eta": "2026-07-08",
+    "items": [{ "sku": "TENT-2P", "name": "Ridgeline 2-person tent", "qty": 1 }]
+  },
+  "1817": {
+    "status": "processing",
+    "eta": "2026-07-05",
+    "items": [
+      { "sku": "STOVE-TI", "name": "Titanium camp stove", "qty": 1 },
+      { "sku": "FUEL-8OZ", "name": "Fuel canister 8oz", "qty": 2 }
+    ]
+  },
+  "2203": {
+    "status": "delivered",
+    "delivered_at": "2026-06-28",
+    "items": [{ "sku": "PACK-65L", "name": "Traverse 65L pack", "qty": 1 }]
+  }
+}

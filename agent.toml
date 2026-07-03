@@ -1,0 +1,5 @@
+name  = "support-triage"
+model = "anthropic/claude-sonnet-5"
+
+[runtime]
+family = "flue"

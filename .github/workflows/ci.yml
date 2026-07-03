@@ -1,0 +1,29 @@
+name: ci
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # The flagship rule: no credentials in the starter, ever.
+      - name: No leaked keys
+        run: |
+          ! grep -rInE 'sk-ant-|sk-proj-|ANTHROPIC_API_KEY=|OPENAI_API_KEY=' \
+            --exclude-dir=.git --exclude-dir=node_modules . \
+            || { echo "credential-looking string found"; exit 1; }
+
+      - name: Build output is gitignored
+        run: |
+          grep -q '^dist-oc/' .gitignore
+          test ! -e dist-oc || { echo "dist-oc/ must not be committed"; exit 1; }
+
+      - name: Model strings agree (agent.toml vs agents/support.ts)
+        run: |
+          m_toml=$(grep -E '^model' agent.toml | sed 's/.*= *"\(.*\)"/\1/')
+          grep -q "model: '$m_toml'" agents/support.ts \
+            || { echo "model in agents/support.ts != agent.toml ($m_toml)"; exit 1; }
