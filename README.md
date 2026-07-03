@@ -39,14 +39,16 @@ oc session logs <session-id>
 
 Reply to anything the agent asks with
 `oc session steer <session-id> "your answer"`, or open the session in the
-[dashboard](https://app.opencomputer.dev) and chat there.
+[dashboard](https://app.opencomputer.dev) and chat there. The triage **skill**
+ships with the deploy (it lives in `src/skills/` and rides the artifact) — try
+it: `oc session create --input "Order 2203 arrived with a bent tent pole."`
 
-To use the triage **skill**, attach this repo as a session source so the agent
-can read `.agents/skills/`:
+To give the agent a **codebase to work on**, attach a repo as a session
+source — it lands in the agent's workspace (and any `.agents/skills/` that
+repo carries for its own development become available too):
 
 ```sh
-oc session create --input "Order 2203 arrived with a bent tent pole." \
-  --source your-fork/oc-flue-starter
+oc session create --input "Fix the failing test." --source your-org/your-repo
 ```
 
 ## Project structure
@@ -59,14 +61,16 @@ src/
   agents/support-triage.ts       # the agent (plain Flue; the filename is the agent's name)
   tools/lookup-order.ts          # a typed custom tool (valibot schema, bundled fixture data)
   data/orders.json               # fixture the tool reads — bundled into the artifact
-.agents/skills/triage/           # a workspace skill the agent loads when triaging
+  skills/triage/SKILL.md         # the agent's skill — ships with the deploy
 ```
 
-Why `.agents/skills/` sits at the repo root: these are Flue **workspace
-skills** — the agent discovers them at runtime from `.agents/skills/**` of its
-working directory, and when you attach this repo as a session source, the repo
-*is* that working directory. (Flue's other skill kind — packaged imports via
-`with { type: 'skill' }` — isn't supported on OC yet.)
+Skills in `src/skills/` belong to **this agent** and travel with every deploy:
+the artifact carries them, and OpenComputer places them into the agent's
+workspace where Flue discovers them at runtime. This is separate from
+`.agents/skills/` in repos you attach as sources — that convention means
+"skills for agents working on *that* repo," and those are picked up from the
+workspace too. (Flue's packaged skill imports — `with { type: 'skill' }` —
+aren't supported on OC yet.)
 
 ## How it works
 
@@ -85,7 +89,8 @@ This integration is **experimental** and intentionally constrained. Supported:
 - One agent per app, exported through `serveOC` (see `src/oc.ts`)
 - `anthropic/*` models (managed billing or your Anthropic key)
 - Custom `defineTool` tools and subagents — they run in-process with your app
-- Workspace skills (`.agents/skills/**` in a repo attached as a session source)
+- Skills shipped with your app (`src/skills/**` rides each deploy), plus
+  workspace skills from repos attached as sources
 - GitHub watches as input events
 
 Not yet: packaged skill imports (`with { type: 'skill' }`), Flue channels and
