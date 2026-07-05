@@ -2,23 +2,25 @@
   "name": "oc-flue-starter",
   "private": true,
   "type": "module",
-  "description": "A Flue agent that deploys to OpenComputer as a durable session",
+  "description": "A Flue agent that deploys to OpenComputer as a durable Cloudflare session",
   "license": "MIT",
   "engines": {
     "node": ">=22.19"
   },
   "scripts": {
-    "oc:build": "oc-flue-build",
-    "dev": "flue dev",
+    "build": "flue build --target cloudflare",
+    "dev": "flue dev --target cloudflare",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
     "@flue/cli": "1.0.0-beta.9",
     "@flue/runtime": "1.0.0-beta.9",
-    "@opencomputer/flue": "^0.1.1",
+    "@opencomputer/flue": "^0.2.0",
     "typescript": "^5.9.3"
   },
   "dependencies": {
+    "agents": "*",
+    "hono": "^4.6.0",
     "valibot": "^1.1.0"
   }
 }

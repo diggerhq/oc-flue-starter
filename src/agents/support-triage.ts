@@ -1,5 +1,10 @@
-import { defineAgent } from '@flue/runtime';
+import { defineAgent, defineAgentProfile } from '@flue/runtime';
+import { useOcGateway, route, ocSandbox, DEFAULT_MODEL, type OcSandboxEnv } from '@opencomputer/flue';
 import { lookupOrder } from '../tools/lookup-order.ts';
+
+// HTTP-transport opt-in — an OC-hosted agent is reachable at /agents/:name/:id ONLY when its module
+// exports `route`. The OC dispatch Worker is the auth boundary, so this pass-through adds none.
+export { route };
 
 const instructions = `
 You are a support triage agent for Acme Outfitters.
@@ -13,12 +18,17 @@ For each customer message:
 4. Keep answers short and concrete: what you found, what happens next.
 `;
 
-export default defineAgent(() => ({
-  // Must match agent.toml — the deploy verifies all three copies agree.
-  model: 'anthropic/claude-sonnet-5',
-  tools: [lookupOrder],
-  instructions,
-  // No `sandbox:` here — OpenComputer supplies the session's sandbox.
-  // Setting one is a deploy-time error on OC. (Run locally with `flue dev`,
-  // which uses Flue's own default instead.)
-}));
+// The agent name is the filename (support-triage) and must match agent.toml.
+export default defineAgent<OcSandboxEnv>((ctx) => {
+  // Point the managed `anthropic` provider at the OC gateway. MUST be inside the initializer —
+  // top-level module code is stripped by the Cloudflare build.
+  useOcGateway(ctx);
+  return {
+    profile: defineAgentProfile({ instructions }),
+    // Prompt-caching-safe default (claude-haiku-4.5); keep in lockstep with agent.toml.
+    model: DEFAULT_MODEL,
+    tools: [lookupOrder],
+    // Durable OpenComputer-fleet workspace (git checkout + build cache survive across turns).
+    sandbox: ocSandbox(ctx.env),
+  };
+});
