@@ -25,7 +25,7 @@ export default defineAgent<OcSandboxEnv>((ctx) => {
   useOcGateway(ctx);
   return {
     profile: defineAgentProfile({ instructions }),
-    // Prompt-caching-safe default (claude-haiku-4.5); keep in lockstep with agent.toml.
+    // Prompt-caching-safe default (claude-haiku-4-5); keep in lockstep with agent.toml.
     model: DEFAULT_MODEL,
     tools: [lookupOrder],
     // Durable OpenComputer-fleet workspace (git checkout + build cache survive across turns).
