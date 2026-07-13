@@ -1,6 +1,7 @@
 import { defineAgent, defineAgentProfile } from '@flue/runtime';
-import { useOcGateway, route, ocSandbox, DEFAULT_MODEL, type OcSandboxEnv } from '@opencomputer/flue';
+import { useOcGateway, route, DEFAULT_MODEL } from '@opencomputer/flue';
 import { lookupOrder } from '../tools/lookup-order.ts';
+import triage from '../skills/triage/SKILL.md' with { type: 'skill' };
 
 // HTTP-transport opt-in — an OC-hosted agent is reachable at /agents/:name/:id ONLY when its module
 // exports `route`. The OC dispatch Worker is the auth boundary, so this pass-through adds none.
@@ -19,7 +20,7 @@ For each customer message:
 `;
 
 // The agent name is the filename (support-triage) and must match agent.toml.
-export default defineAgent<OcSandboxEnv>((ctx) => {
+export default defineAgent((ctx) => {
   // Point the managed `anthropic` provider at the OC gateway. MUST be inside the initializer —
   // top-level module code is stripped by the Cloudflare build.
   useOcGateway(ctx);
@@ -28,7 +29,7 @@ export default defineAgent<OcSandboxEnv>((ctx) => {
     // Prompt-caching-safe default (claude-haiku-4-5); keep in lockstep with agent.toml.
     model: DEFAULT_MODEL,
     tools: [lookupOrder],
-    // Durable OpenComputer-fleet workspace (git checkout + build cache survive across turns).
-    sandbox: ocSandbox(ctx.env),
+    // Packaged into the Worker module graph; no workspace or sandbox is needed to discover it.
+    skills: [triage],
   };
 });
