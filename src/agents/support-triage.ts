@@ -1,5 +1,5 @@
 import { defineAgent, defineAgentProfile } from '@flue/runtime';
-import { useOcGateway, route, ocSandbox, DEFAULT_MODEL, type OcSandboxEnv } from '@opencomputer/flue';
+import { useOcGateway, route, ocSandbox, type OcSandboxEnv } from '@opencomputer/flue';
 import { lookupOrder } from '../tools/lookup-order.ts';
 
 // HTTP-transport opt-in — an OC-hosted agent is reachable at /agents/:name/:id ONLY when its module
@@ -26,7 +26,7 @@ export default defineAgent<OcSandboxEnv>((ctx) => {
   return {
     profile: defineAgentProfile({ instructions }),
     // Prompt-caching-safe default (claude-haiku-4-5); keep in lockstep with agent.toml.
-    model: DEFAULT_MODEL,
+    model: 'anthropic/claude-haiku-4-5',
     tools: [lookupOrder],
     // Durable OpenComputer-fleet workspace (git checkout + build cache survive across turns).
     sandbox: ocSandbox(ctx.env),
