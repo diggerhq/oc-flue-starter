@@ -7,7 +7,23 @@ starts without a sandbox, so model-only turns and tools that use bundled data ca
 For the complete runtime model and supported profile, see
 [Flue on OpenComputer](https://docs.opencomputer.dev/agent-sessions/flue).
 
-## Run it
+## Deploy it from GitHub
+
+The quickest hosted path does not require the CLI:
+
+1. [Fork this repository](https://github.com/diggerhq/oc-flue-starter/fork).
+2. Open [OpenComputer](https://app.opencomputer.dev) and choose **Agents → Create agent → Import from GitHub**.
+3. Connect GitHub, select your fork, keep `main` and the repository root selected, then inspect it.
+4. Give the OpenComputer agent any human-readable name and choose **Deploy agent**.
+5. Follow the deployment log through source, install, build, deploy, and verify. When it is ready,
+   start a session with the example input below.
+
+The OpenComputer name is separate from `agent.toml.name`: `support-triage` remains the internal Flue
+entrypoint. A failed install or build leaves a visible but undeployed agent with a durable log; fix
+the fork and deploy its latest `main` commit again. Automatic deployment on later pushes is not
+enabled in the first repository-import release.
+
+## Deploy it from your machine
 
 You need Node 22.19 or newer, the [`oc` CLI](https://docs.opencomputer.dev/cli/overview), and an
 OpenComputer organization with Managed model access. Log in with `oc login`, then:
@@ -113,6 +129,24 @@ Never put a credential in `agent.toml` or source code.
 `oc agent deploy` scans the source, builds the app, uploads its modules and platform bindings, then
 waits for the exact live deployment to answer health checks before reporting an active revision.
 
+The dashboard import resolves `main` to one exact commit, fetches its tracked files in a short-lived
+Git sandbox, and hands tokenless source to a separate build sandbox. Repository code receives
+public-Internet-only egress for `npm ci`, but no GitHub token, model key, OpenComputer credential,
+Workers credential, inbound port, or preview URL. It runs the same credential-free builder as the
+CLI and keeps a bounded chronological deployment log.
+
+You can validate or build locally without authenticating or deploying:
+
+```sh
+oc agent build --dir . --check-only --json
+
+npm ci
+oc agent build --dir . --target cloudflare --output /tmp/flue-build --json
+```
+
+The full command writes `bundle.tgz` and `deployment.json`; it does not fetch source or install
+dependencies itself.
+
 There is currently one live deployed app per agent. Uploading a new build changes the code used by
 new and existing sessions before verification completes. To restore known-good code, check out that
 source and deploy it again. Do not downgrade across an incompatible Flue storage migration.
@@ -131,7 +165,13 @@ npm run dev
 ## Current boundaries
 
 - Direct text session messages are the supported ingress. Channels and workflows are not connected.
-- Repository sources, watches, publishing, attachments, and repo-backed workspaces are not supported.
+- This repository can be the deployment source for the agent. Repository sources *inside Flue
+  sessions*, watches, publishing, attachments, and repo-backed workspaces are not supported.
+- Managed repository deployment requires a self-contained npm root, committed `package-lock.json`,
+  compatible `engines.node`, and local `@flue/cli`; private registries, build secrets, npm workspaces,
+  custom build commands, submodules, and Git LFS are not supported.
+- A GitHub import deploys only when explicitly requested; automatic deployment on later pushes and
+  preview-branch Workers are not available yet.
 - The Managed gateway currently supports the configured Anthropic model; per-session model overrides
   are rejected.
 - Custom tools in the deployed app can reach platform-managed outbound hosts only. Tenant-configured
@@ -141,6 +181,10 @@ npm run dev
 
 ## Troubleshooting
 
+- If repository inspection fails, confirm the OpenComputer GitHub App can read the fork and that
+  `agent.toml`, `package.json`, and `package-lock.json` exist at the selected root.
+- If a managed build fails, open the deployment in the dashboard for its safe error summary and
+  persisted log, fix the repository, then deploy the latest production-branch commit again.
 - If `flue build` is unavailable, run `npm ci` with Node 22.19 or newer.
 - If credential scanning blocks deployment, remove the reported key and store the value with
   `oc agent secret set ... --from-stdin`.
