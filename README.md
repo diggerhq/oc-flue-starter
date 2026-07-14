@@ -21,7 +21,7 @@ The quickest hosted path does not require the CLI:
 The OpenComputer name is separate from `agent.toml.name`: `support-triage` remains the internal Flue
 entrypoint. A failed install or build leaves a visible but undeployed agent with a durable log; fix
 the fork and deploy its latest `main` commit again. Automatic deployment on later pushes is not
-enabled in the first repository-import release.
+enabled; explicitly deploy the latest `main` commit after changing the repository.
 
 ## Deploy it from your machine
 
