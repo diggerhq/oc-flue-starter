@@ -15,7 +15,7 @@ OpenComputer organization with Managed model access. Log in with `oc login`, the
 ```sh
 git clone https://github.com/diggerhq/oc-flue-starter
 cd oc-flue-starter
-npm install
+npm ci
 
 oc agent deploy
 oc session create \
@@ -43,6 +43,7 @@ explain the replacement path. The follow-up continues the same stored conversati
 | Path | Purpose |
 | --- | --- |
 | `agent.toml` | OpenComputer agent name, model, runtime, and non-secret variables |
+| `package-lock.json` | Reproducible dependencies for local and managed builds |
 | `flue.config.ts` | Flue build target shared by local development and deployment |
 | `src/app.ts` | Standard OpenComputer hosting app and health route |
 | `src/agents/support-triage.ts` | Agent instructions, model, tools, and skills |
@@ -140,7 +141,7 @@ npm run dev
 
 ## Troubleshooting
 
-- If `flue build` is unavailable, run `npm install` with Node 22.19 or newer.
+- If `flue build` is unavailable, run `npm ci` with Node 22.19 or newer.
 - If credential scanning blocks deployment, remove the reported key and store the value with
   `oc agent secret set ... --from-stdin`.
 - If verification fails, fix the import-time or health-route error reported by the deploy and retry.

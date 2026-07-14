@@ -13,8 +13,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22.19'
+          cache: npm
 
-      - run: npm install
+      - run: npm ci --no-audit --no-fund
+
+      - name: Managed-build fixtures agree
+        run: npm run test:fixtures
 
       # The flagship rule: no credentials in the starter, ever.
       # Match full credential SHAPES (same as the CLI/server scanners), not
@@ -57,3 +61,6 @@ jobs:
           if grep -R -E 'flue/session-sandbox|OC_SANDBOX_API|ocSandbox' dist; then
             echo "default starter unexpectedly bundled sandbox provisioning"; exit 1
           fi
+
+      - name: Generated output stays untracked
+        run: test -z "$(git status --short --untracked-files=all)"

@@ -1,0 +1,5 @@
+name  = "install-failure"
+model = "anthropic/claude-haiku-4-5"
+
+[runtime]
+family = "flue"
