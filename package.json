@@ -2,7 +2,7 @@
   "name": "oc-flue-starter",
   "private": true,
   "type": "module",
-  "description": "A Flue agent that deploys to OpenComputer as a durable Cloudflare session",
+  "description": "A support-triage Flue agent with a typed tool and packaged skill for OpenComputer",
   "license": "MIT",
   "engines": {
     "node": ">=22.19"
@@ -19,7 +19,7 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
-    "agents": "*",
+    "agents": "^0.17.4",
     "hono": "^4.6.0",
     "valibot": "^1.1.0"
   }

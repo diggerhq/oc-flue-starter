@@ -1,7 +1,7 @@
 import { defineTool } from '@flue/runtime';
 import * as v from 'valibot';
-// Fixture data rides the artifact bundle. Custom tools run in the Worker, not
-// in a repo checkout or sandbox, so runtime data must be imported explicitly.
+// Fixture data rides in the deployed artifact. Custom tools do not run from a
+// repo checkout or sandbox, so runtime data must be imported explicitly.
 import orders from '../data/orders.json' with { type: 'json' };
 
 type Json = string | number | boolean | null | Json[] | { [key: string]: Json };

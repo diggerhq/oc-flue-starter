@@ -1,7 +1,7 @@
 name: ci
 on:
   push:
-    branches: [main]
+    branches: [main, flue-native]
   pull_request:
 
 jobs:
@@ -31,8 +31,12 @@ jobs:
 
       - name: Build output is gitignored
         run: |
-          grep -q '^dist-oc/' .gitignore
-          test ! -e dist-oc || { echo "dist-oc/ must not be committed"; exit 1; }
+          for generated_path in dist/ .flue-vite/ .wrangler/ .flue-vite.wrangler.jsonc; do
+            grep -qxF "$generated_path" .gitignore \
+              || { echo "$generated_path must be listed in .gitignore"; exit 1; }
+            test ! -e "$generated_path" \
+              || { echo "$generated_path must not be committed"; exit 1; }
+          done
 
       - name: Model declarations agree
         run: |
