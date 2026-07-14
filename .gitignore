@@ -1,6 +1,5 @@
 node_modules/
 dist/
-dist-oc/
 .flue-vite/
 .wrangler/
 .flue-vite.wrangler.jsonc

@@ -1,9 +1,9 @@
 import { defineAgent, defineAgentProfile } from '@flue/runtime';
-import { useOcGateway, route, ocSandbox, type OcSandboxEnv } from '@opencomputer/flue';
+import { useOcGateway, route, DEFAULT_MODEL } from '@opencomputer/flue';
 import { lookupOrder } from '../tools/lookup-order.ts';
+import triage from '../skills/triage/SKILL.md' with { type: 'skill' };
 
-// HTTP-transport opt-in — an OC-hosted agent is reachable at /agents/:name/:id ONLY when its module
-// exports `route`. The OC dispatch Worker is the auth boundary, so this pass-through adds none.
+// Export the transport route OpenComputer uses to dispatch accepted session input.
 export { route };
 
 const instructions = `
@@ -13,22 +13,21 @@ For each customer message:
 1. Work out what the customer needs. If order-related, use the lookup_order
    tool to pull the order before answering.
 2. For refund or damage reports, follow the "triage" skill step by step.
-3. If you are missing information you cannot look up (an order id, a photo,
-   the customer's intent), ask for it — don't guess.
+3. If you are missing information you cannot look up (an order id, a short
+   description of the problem, or the customer's intent), ask for it. Do not guess.
 4. Keep answers short and concrete: what you found, what happens next.
 `;
 
 // The agent name is the filename (support-triage) and must match agent.toml.
-export default defineAgent<OcSandboxEnv>((ctx) => {
-  // Point the managed `anthropic` provider at the OC gateway. MUST be inside the initializer —
-  // top-level module code is stripped by the Cloudflare build.
+export default defineAgent((ctx) => {
+  // Register OpenComputer's managed model gateway inside the Flue initializer.
   useOcGateway(ctx);
   return {
     profile: defineAgentProfile({ instructions }),
     // Prompt-caching-safe default (claude-haiku-4-5); keep in lockstep with agent.toml.
-    model: 'anthropic/claude-haiku-4-5',
+    model: DEFAULT_MODEL,
     tools: [lookupOrder],
-    // Durable OpenComputer-fleet workspace (git checkout + build cache survive across turns).
-    sandbox: ocSandbox(ctx.env),
+    // Packaged into the Worker module graph; no workspace or sandbox is needed to discover it.
+    skills: [triage],
   };
 });

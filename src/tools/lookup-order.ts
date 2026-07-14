@@ -1,9 +1,7 @@
 import { defineTool } from '@flue/runtime';
 import * as v from 'valibot';
-// Fixture data rides the artifact bundle — custom tools run inside the
-// agent's sandbox, so anything they need at runtime must be imported, not
-// read from the repo checkout. (A real integration would call your API here;
-// see the README's note on outbound network access.)
+// Fixture data rides in the deployed artifact. Custom tools do not run from a
+// repo checkout or sandbox, so runtime data must be imported explicitly.
 import orders from '../data/orders.json' with { type: 'json' };
 
 type Json = string | number | boolean | null | Json[] | { [key: string]: Json };
