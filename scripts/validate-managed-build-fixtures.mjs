@@ -34,6 +34,15 @@ assert.deepEqual(packageLock.packages[''].engines, packageJson.engines);
 assert.deepEqual(packageLock.packages[''].devDependencies, packageJson.devDependencies);
 assert.deepEqual(packageLock.packages[''].dependencies, packageJson.dependencies);
 
+for (const [packagePath, metadata] of Object.entries(packageLock.packages)) {
+  if (metadata.resolved === undefined) continue;
+  assert.match(
+    metadata.resolved,
+    /^https:\/\//,
+    `${packagePath || '<root>'} must resolve from a portable HTTPS URL, got ${metadata.resolved}`,
+  );
+}
+
 assert.deepEqual(projection, {
   schema_version: 1,
   flue: { entrypoint },
