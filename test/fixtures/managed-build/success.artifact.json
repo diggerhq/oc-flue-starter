@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "flue": {
+    "entrypoint": "support-triage",
+    "wrangler": {
+      "main": "index.js",
+      "compatibility_date": "2026-04-01",
+      "compatibility_flags": [
+        "nodejs_compat"
+      ],
+      "no_bundle": true,
+      "durable_objects": {
+        "bindings": [
+          {
+            "name": "FLUE_SUPPORT_TRIAGE_AGENT",
+            "class_name": "FlueSupportTriageAgent"
+          },
+          {
+            "name": "FLUE_REGISTRY",
+            "class_name": "FlueRegistry"
+          }
+        ]
+      }
+    }
+  },
+  "model": "anthropic/claude-haiku-4-5",
+  "vars": {},
+  "runtime": {
+    "family": "flue",
+    "type": "default"
+  },
+  "bundle": {
+    "digest": "sha256:cbb8766d972199b01d03389d2680970dc29d1d349e61b5f1b5494277536bf4da",
+    "size_bytes": 1598060
+  }
+}

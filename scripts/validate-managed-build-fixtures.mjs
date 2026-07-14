@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
+import { mkdtempSync, readFileSync, rmSync, statSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
-import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -13,6 +14,7 @@ const readJson = (path) => JSON.parse(readFileSync(path, 'utf8'));
 const packageJson = readJson(join(root, 'package.json'));
 const packageLock = readJson(join(root, 'package-lock.json'));
 const projection = readJson(join(fixtureRoot, 'success.projection.json'));
+const artifactGolden = readJson(join(fixtureRoot, 'success.artifact.json'));
 const manifest = readFileSync(join(root, 'agent.toml'), 'utf8');
 
 const manifestValue = (source, key) => {
@@ -50,6 +52,18 @@ assert.deepEqual(projection, {
   vars: {},
   runtime: { family: 'flue', type: 'default' },
 });
+assert.deepEqual(
+  {
+    schema_version: artifactGolden.schema_version,
+    flue: { entrypoint: artifactGolden.flue.entrypoint },
+    model: artifactGolden.model,
+    vars: artifactGolden.vars,
+    runtime: artifactGolden.runtime,
+  },
+  projection,
+);
+assert.match(artifactGolden.bundle.digest, /^sha256:[0-9a-f]{64}$/);
+assert.ok(artifactGolden.bundle.size_bytes > 0);
 
 const failurePackage = readJson(join(failureRoot, 'package.json'));
 const failureLock = readJson(join(failureRoot, 'package-lock.json'));
@@ -78,4 +92,56 @@ try {
   assert.match(output, /Missing: @flue\/cli@1\.0\.0-beta\.9 from lock file/);
 } finally {
   rmSync(npmCache, { recursive: true, force: true });
+}
+
+if (process.env.OC_BIN) {
+  const runOcBuild = (args) => {
+    const result = spawnSync(process.env.OC_BIN, ['agent', 'build', ...args, '--json'], {
+      cwd: root,
+      encoding: 'utf8',
+      maxBuffer: 10 * 1024 * 1024,
+    });
+    assert.equal(
+      result.status,
+      0,
+      `oc agent build failed (${result.error?.message || result.stderr || 'no diagnostic'})`,
+    );
+    let deployment;
+    assert.doesNotThrow(() => {
+      deployment = JSON.parse(result.stdout);
+    }, 'oc agent build must print JSON to stdout');
+    return deployment;
+  };
+  const withoutBuilder = ({ builder: _builder, ...deployment }) => deployment;
+  const assertBuilder = (deployment) => {
+    assert.match(deployment.builder?.version ?? '', /^oc@.+/);
+  };
+
+  const checkOnly = runOcBuild(['--dir', root, '--check-only']);
+  assertBuilder(checkOnly);
+  assert.deepEqual(withoutBuilder(checkOnly), projection);
+
+  const outputRoot = mkdtempSync(join(tmpdir(), 'oc-flue-starter-artifact-'));
+  try {
+    const full = runOcBuild([
+      '--dir',
+      root,
+      '--target',
+      'cloudflare',
+      '--output',
+      outputRoot,
+    ]);
+    const persisted = readJson(join(outputRoot, 'deployment.json'));
+    assertBuilder(full);
+    assert.equal(full.builder.version, checkOnly.builder.version);
+    assert.deepEqual(persisted, full);
+    assert.deepEqual(withoutBuilder(full), artifactGolden);
+
+    const bundlePath = join(outputRoot, 'bundle.tgz');
+    assert.equal(statSync(bundlePath).size, artifactGolden.bundle.size_bytes);
+    const digest = `sha256:${createHash('sha256').update(readFileSync(bundlePath)).digest('hex')}`;
+    assert.equal(digest, artifactGolden.bundle.digest);
+  } finally {
+    rmSync(outputRoot, { recursive: true, force: true });
+  }
 }
