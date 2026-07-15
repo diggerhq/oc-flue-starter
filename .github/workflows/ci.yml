@@ -1,7 +1,7 @@
 name: ci
 on:
   push:
-    branches: [main]
+    branches: [main, flue-native]
   pull_request:
 
 jobs:
@@ -9,6 +9,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.19'
+          cache: npm
+
+      - run: npm ci --no-audit --no-fund
+
+      - name: Managed-build fixtures agree
+        run: npm run test:fixtures
 
       # The flagship rule: no credentials in the starter, ever.
       # Match full credential SHAPES (same as the CLI/server scanners), not
@@ -25,11 +35,32 @@ jobs:
 
       - name: Build output is gitignored
         run: |
-          grep -q '^dist-oc/' .gitignore
-          test ! -e dist-oc || { echo "dist-oc/ must not be committed"; exit 1; }
+          for generated_path in dist/ .flue-vite/ .wrangler/ .flue-vite.wrangler.jsonc; do
+            grep -qxF "$generated_path" .gitignore \
+              || { echo "$generated_path must be listed in .gitignore"; exit 1; }
+            test ! -e "$generated_path" \
+              || { echo "$generated_path must not be committed"; exit 1; }
+          done
 
-      - name: Model strings agree (agent.toml vs src/agents/support-triage.ts)
+      - name: Model declarations agree
         run: |
           m_toml=$(grep -E '^model' agent.toml | sed 's/.*= *"\(.*\)"/\1/')
-          grep -q "model: '$m_toml'" src/agents/support-triage.ts \
-            || { echo "model in src/agents/support-triage.ts != agent.toml ($m_toml)"; exit 1; }
+          m_sdk=$(node --input-type=module -e "import { DEFAULT_MODEL } from '@opencomputer/flue'; process.stdout.write(DEFAULT_MODEL)")
+          test "$m_toml" = "$m_sdk" \
+            || { echo "agent.toml model ($m_toml) != DEFAULT_MODEL ($m_sdk)"; exit 1; }
+          grep -q 'model: DEFAULT_MODEL' src/agents/support-triage.ts
+
+      - run: npm run typecheck
+      - run: npm run build
+
+      - name: Packaged skill is in the Worker graph
+        run: grep -R -q 'How to triage refund requests and damage reports' dist
+
+      - name: Default Worker graph stays sandbox-free
+        run: |
+          if grep -R -E 'flue/session-sandbox|OC_SANDBOX_API|ocSandbox' dist; then
+            echo "default starter unexpectedly bundled sandbox provisioning"; exit 1
+          fi
+
+      - name: Generated output stays untracked
+        run: test -z "$(git status --short --untracked-files=all)"

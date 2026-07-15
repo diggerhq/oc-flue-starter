@@ -1,4 +1,4 @@
-name  = "support-triage"
+name  = "install-failure"
 model = "anthropic/claude-haiku-4-5"
 
 [runtime]

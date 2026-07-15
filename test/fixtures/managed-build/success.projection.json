@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "flue": {
+    "entrypoint": "support-triage"
+  },
+  "model": "anthropic/claude-haiku-4-5",
+  "vars": {},
+  "runtime": {
+    "family": "flue",
+    "type": "default"
+  }
+}

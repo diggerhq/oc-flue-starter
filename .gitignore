@@ -1,4 +1,6 @@
 node_modules/
-dist-oc/
-*.log
-.DS_Store
+dist/
+.flue-vite/
+.wrangler/
+.flue-vite.wrangler.jsonc
+*.tsbuildinfo

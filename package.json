@@ -2,23 +2,27 @@
   "name": "oc-flue-starter",
   "private": true,
   "type": "module",
-  "description": "A Flue agent that deploys to OpenComputer as a durable session",
+  "description": "A support-triage Flue agent with a typed tool and packaged skill for OpenComputer",
   "license": "MIT",
+  "packageManager": "npm@10.9.3",
   "engines": {
     "node": ">=22.19"
   },
   "scripts": {
-    "oc:build": "oc-flue-build",
-    "dev": "flue dev",
+    "build": "flue build --target cloudflare",
+    "dev": "flue dev --target cloudflare",
+    "test:fixtures": "node scripts/validate-managed-build-fixtures.mjs",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
     "@flue/cli": "1.0.0-beta.9",
     "@flue/runtime": "1.0.0-beta.9",
-    "@opencomputer/flue": "^0.1.1",
+    "@opencomputer/flue": "0.2.0",
     "typescript": "^5.9.3"
   },
   "dependencies": {
+    "agents": "^0.17.4",
+    "hono": "^4.6.0",
     "valibot": "^1.1.0"
   }
 }
