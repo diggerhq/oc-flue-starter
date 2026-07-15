@@ -15,13 +15,12 @@ The quickest hosted path does not require the CLI:
 2. Open [OpenComputer](https://app.opencomputer.dev) and choose **Agents → Create agent → Import from GitHub**.
 3. Connect GitHub, select your fork, keep `main` and the repository root selected, then inspect it.
 4. Give the OpenComputer agent any human-readable name and choose **Deploy agent**.
-5. Follow the deployment log through source, install, build, deploy, and verify. When it is ready,
-   start a session with the example input below.
+5. Follow the deployment log until it is ready, then start a session with the example input below.
 
 The OpenComputer name is separate from `agent.toml.name`: `support-triage` remains the internal Flue
 entrypoint. A failed install or build leaves a visible but undeployed agent with a durable log; fix
-the fork and deploy its latest `main` commit again. Automatic deployment on later pushes is not
-enabled; explicitly deploy the latest `main` commit after changing the repository.
+the fork and push the fix. Every later push to the linked `main` branch automatically creates a new
+deployment, whose progress and logs appear in the dashboard.
 
 ## Deploy it from your machine
 
@@ -170,8 +169,8 @@ npm run dev
 - Managed repository deployment requires a self-contained npm root, committed `package-lock.json`,
   compatible `engines.node`, and local `@flue/cli`; private registries, build secrets, npm workspaces,
   custom build commands, submodules, and Git LFS are not supported.
-- A GitHub import deploys only when explicitly requested; automatic deployment on later pushes and
-  preview-branch Workers are not available yet.
+- A GitHub import deploys immediately, then automatically deploys later pushes to its linked
+  production branch. Preview-branch Workers are not available yet.
 - The Managed gateway currently supports the configured Anthropic model; per-session model overrides
   are rejected.
 - Custom tools in the deployed app can reach platform-managed outbound hosts only. Tenant-configured
@@ -184,7 +183,7 @@ npm run dev
 - If repository inspection fails, confirm the OpenComputer GitHub App can read the fork and that
   `agent.toml`, `package.json`, and `package-lock.json` exist at the selected root.
 - If a managed build fails, open the deployment in the dashboard for its safe error summary and
-  persisted log, fix the repository, then deploy the latest production-branch commit again.
+  persisted log, fix the repository, then push the fix to the linked production branch.
 - If `flue build` is unavailable, run `npm ci` with Node 22.19 or newer.
 - If credential scanning blocks deployment, remove the reported key and store the value with
   `oc agent secret set ... --from-stdin`.
