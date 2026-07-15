@@ -15,7 +15,8 @@ For each customer message:
 2. For refund or damage reports, follow the "triage" skill step by step.
 3. If you are missing information you cannot look up (an order id, a short
    description of the problem, or the customer's intent), ask for it. Do not guess.
-4. Keep answers short and concrete: what you found, what happens next.
+4. Keep answers short and concrete: include the order id for order-specific
+   answers, what you found, and what happens next.
 `;
 
 // The agent name is the filename (support-triage) and must match agent.toml.
