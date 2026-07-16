@@ -13,16 +13,22 @@ The quickest hosted path does not require the CLI:
 
 1. [Fork this repository](https://github.com/diggerhq/oc-flue-starter/fork).
 2. Open [OpenComputer](https://app.opencomputer.dev) and choose **Agents → Create agent → Import from GitHub**.
-3. Connect GitHub, select your fork, keep `main` and the repository root selected, then inspect it.
+3. Connect GitHub, select your fork, keep `main` and the repository root selected, then choose
+   **Review agent**.
 4. Give the OpenComputer agent any human-readable name and choose **Deploy agent**.
-5. While the deployment runs, choose **Agents** in the dashboard sidebar, open the new agent, then
-   choose **Connect OpenComputer Slack** in its Slack panel and authorize the workspace.
-6. When the deployment is ready and Slack is connected, choose **Open Slack** and send the agent a
-   direct message:
+5. Guided setup opens immediately. Choose **Connect Slack** while the deployment continues in the
+   background, then authorize the workspace. Compact deployment progress stays visible; expand the
+   build log only if you need it.
+6. Slack returns to the same setup page. When it shows **Send your first message**, choose
+   **Open Slack** and send the agent a direct message:
 
    ```text
    Order 2203 arrived with a torn shoulder strap. What happens next?
    ```
+
+7. Return to setup to see the durable session and first exchange appear automatically. Open the
+   complete session from there, or keep chatting in Slack. If you leave sooner, choose
+   **Continue setup** from the agent page.
 
 The OpenComputer name is separate from `agent.toml.name`: `support-triage` remains the internal Flue
 entrypoint. A failed install or build leaves a visible but undeployed agent with a durable log; fix
