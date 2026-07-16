@@ -15,8 +15,8 @@ The quickest hosted path does not require the CLI:
 2. Open [OpenComputer](https://app.opencomputer.dev) and choose **Agents → Create agent → Import from GitHub**.
 3. Connect GitHub, select your fork, keep `main` and the repository root selected, then inspect it.
 4. Give the OpenComputer agent any human-readable name and choose **Deploy agent**.
-5. While the deployment runs, open its Slack panel, choose **Connect OpenComputer Slack**, and
-   authorize the workspace.
+5. While the deployment runs, choose **Agents** in the dashboard sidebar, open the new agent, then
+   choose **Connect OpenComputer Slack** in its Slack panel and authorize the workspace.
 6. When the deployment is ready and Slack is connected, choose **Open Slack** and send the agent a
    direct message:
 
