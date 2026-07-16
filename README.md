@@ -26,6 +26,10 @@ The quickest hosted path does not require the CLI:
    Order 2203 arrived with a torn shoulder strap. What happens next?
    ```
 
+7. Return to setup to see the durable session and first exchange appear automatically. Open the
+   complete session from there, or keep chatting in Slack. If you leave sooner, choose
+   **Continue setup** from the agent page.
+
 The OpenComputer name is separate from `agent.toml.name`: `support-triage` remains the internal Flue
 entrypoint. A failed install or build leaves a visible but undeployed agent with a durable log; fix
 the fork and push the fix. Every later push to the linked `main` branch automatically creates a new
