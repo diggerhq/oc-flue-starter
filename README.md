@@ -15,12 +15,25 @@ The quickest hosted path does not require the CLI:
 2. Open [OpenComputer](https://app.opencomputer.dev) and choose **Agents → Create agent → Import from GitHub**.
 3. Connect GitHub, select your fork, keep `main` and the repository root selected, then inspect it.
 4. Give the OpenComputer agent any human-readable name and choose **Deploy agent**.
-5. Follow the deployment log until it is ready, then start a session with the example input below.
+5. While the deployment runs, choose **Agents** in the dashboard sidebar, open the new agent, then
+   choose **Connect OpenComputer Slack** in its Slack panel and authorize the workspace.
+6. When the deployment is ready and Slack is connected, choose **Open Slack** and send the agent a
+   direct message:
+
+   ```text
+   Order 2203 arrived with a torn shoulder strap. What happens next?
+   ```
 
 The OpenComputer name is separate from `agent.toml.name`: `support-triage` remains the internal Flue
 entrypoint. A failed install or build leaves a visible but undeployed agent with a durable log; fix
 the fork and push the fix. Every later push to the linked `main` branch automatically creates a new
 deployment, whose progress and logs appear in the dashboard.
+
+The managed Slack connection belongs to OpenComputer, not this application. You do not install a
+Slack package or put a bot token or signing secret in the repository. For a separate Slack identity,
+see [Slack on OpenComputer](https://docs.opencomputer.dev/agent-sessions/slack). Native Flue channel
+routes are a different hosting model described in the
+[Flue channels guide](https://flueframework.com/docs/guide/channels/).
 
 ## Deploy it from your machine
 
@@ -77,6 +90,10 @@ OpenComputer runs the compiled Flue app and connects it to agents, sessions, eve
 Managed model access. Each OpenComputer session maps to one durable Flue conversation. Session
 creation and steering return after the input is durably accepted; the model turn continues
 asynchronously, and later messages queue in order.
+
+A managed Slack direct-message thread creates or continues that same kind of OpenComputer session.
+OpenComputer verifies and records the inbound message, delivers it to the Flue conversation, and
+posts the agent's reply back to the thread. Slack credentials never enter the deployed app.
 
 Under the hood, deployment builds Flue's Cloudflare target. The deployed app handles requests in a
 Worker, while each session's conversation and turn state live in its own Durable Object. This is why
@@ -163,7 +180,8 @@ npm run dev
 
 ## Current boundaries
 
-- Direct text session messages are the supported ingress. Channels and workflows are not connected.
+- Direct session messages and the OpenComputer-managed Slack connection are supported ingress.
+  Native Flue channel routes and workflows are not exposed by the current hosting path.
 - This repository can be the deployment source for the agent. Repository sources *inside Flue
   sessions*, watches, publishing, attachments, and repo-backed workspaces are not supported.
 - Managed repository deployment requires a self-contained npm root, committed `package-lock.json`,
