@@ -1,8 +1,9 @@
 # Flue on OpenComputer starter
 
 Deploy a typed [Flue](https://flueframework.com) app as an OpenComputer agent. This support-triage
-example has one custom tool, one packaged skill, and durable multi-turn sessions. It deliberately
-starts without a sandbox, so model-only turns and tools that use bundled data can run immediately.
+example has one custom tool, one packaged skill, durable multi-turn sessions, and managed repository
+tools that can inspect code and open pull requests. Its Linux sandbox is demand-driven, so ordinary
+model turns and bundled-data tools still run without provisioning a machine.
 
 For the complete runtime model and supported profile, see
 [Flue on OpenComputer](https://docs.opencomputer.dev/agent-sessions/flue).
@@ -17,12 +18,22 @@ The quickest hosted path does not require the CLI:
 4. Give the OpenComputer agent any human-readable name and choose **Deploy agent**.
 5. While the deployment runs, choose **Agents** in the dashboard sidebar, open the new agent, then
    choose **Connect OpenComputer Slack** in its Slack panel and authorize the workspace.
-6. When the deployment is ready and Slack is connected, choose **Open Slack** and send the agent a
-   direct message:
+6. In the agent's **Repository access** settings, leave **All repositories** selected or choose the
+   repositories this agent may work in.
+7. When the deployment is ready and Slack is connected, choose **Open Slack**. A support request
+   exercises the bundled data and skill:
 
    ```text
    Order 2203 arrived with a torn shoulder strap. What happens next?
    ```
+
+   To exercise managed repository work, send an exact repository task:
+
+   ```text
+   In your-org/your-repo, add a short setup note to the README and open a pull request.
+   ```
+
+   Replace `your-org/your-repo` with a repository granted to the OpenComputer GitHub App.
 
 The OpenComputer name is separate from `agent.toml.name`: `support-triage` remains the internal Flue
 entrypoint. A failed install or build leaves a visible but undeployed agent with a durable log; fix
@@ -74,15 +85,15 @@ explain the replacement path. The follow-up continues the same stored conversati
 | `package-lock.json` | Reproducible dependencies for local and managed builds |
 | `flue.config.ts` | Flue build target shared by local development and deployment |
 | `src/app.ts` | Standard OpenComputer hosting app and health route |
-| `src/agents/support-triage.ts` | Agent instructions, model, tools, and skills |
+| `src/agents/support-triage.ts` | Agent instructions, model, lazy sandbox, repository tools, custom tool, and skill |
 | `src/tools/lookup-order.ts` | Typed custom tool |
 | `src/data/orders.json` | Fixture imported into the deployed app |
 | `src/skills/triage/SKILL.md` | Packaged Flue skill imported by the agent |
-| `examples/with-sandbox.ts` | Complete, typechecked optional-sandbox example |
 
-The tool imports its fixture, and the agent imports its skill with Flue's
+The custom tool imports its fixture, and the agent imports its skill with Flue's
 `with { type: 'skill' }` mechanism. Both become part of the deployed module graph. They do not rely
-on a repository checkout or a sandbox filesystem.
+on a repository checkout or a sandbox filesystem. Repository tools add an exact source only when a
+task needs one.
 
 ## How it runs
 
@@ -94,6 +105,13 @@ asynchronously, and later messages queue in order.
 A managed Slack direct-message thread creates or continues that same kind of OpenComputer session.
 OpenComputer verifies and records the inbound message, delivers it to the Flue conversation, and
 posts the agent's reply back to the thread. Slack credentials never enter the deployed app.
+
+For repository work, the agent first lists the repositories allowed by the agent's current policy
+and GitHub App grant. It resolves one exact target, pins the requested ref to an exact commit, and
+checks tokenless files into `/workspace/sources/<name>` in the session sandbox. The agent edits and
+tests there using ordinary Flue sandbox operations. Publishing runs separately with a short-lived,
+repository-scoped credential and returns an OpenComputer-authored pull-request URL; the credential
+never enters the agent Worker, model context, or persistent session sandbox.
 
 Under the hood, deployment builds Flue's Cloudflare target. The deployed app handles requests in a
 Worker, while each session's conversation and turn state live in its own Durable Object. This is why
@@ -111,15 +129,25 @@ stored in this repository or compiled into the app.
 - To rename the agent, rename `src/agents/support-triage.ts` and update `name` in `agent.toml` together.
 - Keep the model in `agent.toml` aligned with the model returned by the agent definition.
 
-### Optional sandbox
+### Managed repository work
 
-The default agent has no sandbox. If it needs a Linux shell or durable files, use the complete
-[sandbox example](examples/with-sandbox.ts) as the starting point. Declaring `ocSandbox` performs no
-provisioning during Worker startup or Flue runtime initialization. The first real shell or file
-operation resolves one sandbox for that session, and later operations reuse it.
+The starter registers `ocRepoTools(ctx)` beside `ocSandbox(ctx.env)`. The tools intentionally do not
+default to the repository that deployed this agent:
 
-The sandbox starts empty. Repository checkout and repo-backed workspaces are not implemented for
-Flue sessions yet.
+1. `list_working_repos` lists only repositories in both the GitHub App grant and the agent's current
+   repository policy.
+2. `add_source` pins one exact repository and ref, materializes it lazily, and returns the only path
+   the agent should edit.
+3. `github_publish_pull_request` publishes the inspected diff from that source on an isolated
+   `oc/...` branch. It does not push the default branch.
+
+Repository work supports up to eight immutable sources in one session. Use a new session when a
+task needs a newer branch head. Removing repository access blocks new repository operations but does
+not delete bytes already present in a live sandbox.
+
+Declaring the sandbox performs no provisioning during Worker startup or Flue initialization. The
+first real shell, file, or source operation resolves one sandbox for that session, and later
+operations reuse it.
 
 ### Variables and secrets
 
@@ -182,8 +210,9 @@ npm run dev
 
 - Direct session messages and the OpenComputer-managed Slack connection are supported ingress.
   Native Flue channel routes and workflows are not exposed by the current hosting path.
-- This repository can be the deployment source for the agent. Repository sources *inside Flue
-  sessions*, watches, publishing, attachments, and repo-backed workspaces are not supported.
+- Managed Flue sessions can check out exact repository sources and open pull requests. Direct or
+  force pushes, merge, comments, reviews, issue operations, repository watches, attachments, and
+  multi-repository pull requests are not supported.
 - Managed repository deployment requires a self-contained npm root, committed `package-lock.json`,
   compatible `engines.node`, and local `@flue/cli`; private registries, build secrets, npm workspaces,
   custom build commands, submodules, and Git LFS are not supported.
