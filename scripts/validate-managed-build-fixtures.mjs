@@ -31,7 +31,7 @@ assert.equal(packageJson.engines.node, '>=22.19');
 assert.equal(packageJson.packageManager, 'npm@10.9.3');
 assert.equal(packageJson.devDependencies['@flue/cli'], '1.0.0-beta.9');
 assert.equal(packageJson.devDependencies['@flue/runtime'], '1.0.0-beta.9');
-assert.equal(packageJson.devDependencies['@opencomputer/flue'], '0.3.0');
+assert.equal(packageJson.devDependencies['@opencomputer/flue'], '0.3.1');
 assert.equal(packageLock.lockfileVersion, 3);
 assert.deepEqual(packageLock.packages[''].engines, packageJson.engines);
 assert.deepEqual(packageLock.packages[''].devDependencies, packageJson.devDependencies);
