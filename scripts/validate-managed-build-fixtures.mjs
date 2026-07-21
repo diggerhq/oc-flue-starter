@@ -16,6 +16,7 @@ const packageLock = readJson(join(root, 'package-lock.json'));
 const projection = readJson(join(fixtureRoot, 'success.projection.json'));
 const artifactGolden = readJson(join(fixtureRoot, 'success.artifact.json'));
 const manifest = readFileSync(join(root, 'agent.toml'), 'utf8');
+const agentSource = readFileSync(join(root, 'src', 'agents', 'support-triage.ts'), 'utf8');
 
 const manifestValue = (source, key) => {
   const match = source.match(new RegExp(`^${key}\\s*=\\s*"([^"]+)"`, 'm'));
@@ -30,11 +31,23 @@ assert.equal(packageJson.engines.node, '>=22.19');
 assert.equal(packageJson.packageManager, 'npm@10.9.3');
 assert.equal(packageJson.devDependencies['@flue/cli'], '1.0.0-beta.9');
 assert.equal(packageJson.devDependencies['@flue/runtime'], '1.0.0-beta.9');
-assert.equal(packageJson.devDependencies['@opencomputer/flue'], '0.2.0');
+assert.equal(packageJson.devDependencies['@opencomputer/flue'], '0.3.1');
 assert.equal(packageLock.lockfileVersion, 3);
 assert.deepEqual(packageLock.packages[''].engines, packageJson.engines);
 assert.deepEqual(packageLock.packages[''].devDependencies, packageJson.devDependencies);
 assert.deepEqual(packageLock.packages[''].dependencies, packageJson.dependencies);
+assert.match(agentSource, /sandbox:\s*ocSandbox\(ctx\.env\)/);
+assert.match(agentSource, /tools:\s*\[lookupOrder,\s*\.\.\.ocRepoTools\(ctx\)\]/);
+for (const instruction of [
+  'list_working_repos',
+  "never assume the app's deployment repository",
+  'add_source',
+  'returned source path',
+  'github_publish_pull_request',
+  'pull-request URL',
+]) {
+  assert.ok(agentSource.includes(instruction), `agent instructions must include ${instruction}`);
+}
 
 for (const [packagePath, metadata] of Object.entries(packageLock.packages)) {
   if (metadata.resolved === undefined) continue;

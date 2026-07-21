@@ -56,11 +56,12 @@ jobs:
       - name: Packaged skill is in the Worker graph
         run: grep -R -q 'How to triage refund requests and damage reports' dist
 
-      - name: Default Worker graph stays sandbox-free
+      - name: Managed sandbox and repository tools are in the Worker graph
         run: |
-          if grep -R -E 'flue/session-sandbox|OC_SANDBOX_API|ocSandbox' dist; then
-            echo "default starter unexpectedly bundled sandbox provisioning"; exit 1
-          fi
+          grep -Eq 'sandbox:[[:space:]]*ocSandbox\(ctx\.env\)' src/agents/support-triage.ts
+          grep -R -qF '/flue/session-sandbox?session=' dist
+          grep -R -qF 'list_working_repos' dist
+          grep -R -qF 'github_publish_pull_request' dist
 
       - name: Generated output stays untracked
         run: test -z "$(git status --short --untracked-files=all)"
