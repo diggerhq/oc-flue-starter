@@ -1,4 +1,4 @@
-# Flue on OpenComputer starter
+# An agent is a repo
 
 Deploy a typed [Flue](https://flueframework.com) app as an OpenComputer agent. This support-triage
 example has one custom tool, one packaged skill, durable multi-turn sessions, and managed repository
